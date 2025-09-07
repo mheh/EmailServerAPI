@@ -1,0 +1,336 @@
+openapi: 3.1.0
+info:
+  title: EmailServer API
+  version: 0.1.0
+  license:
+    name: Copyright (c) 2025 Austin MacWorks
+    identifier: Custom
+servers:
+  - url: http://localhost:8080/
+    description: local vapor server
+security:
+  - basicAuth: []
+paths:
+  /send/swiftmail/host/{smtpHost}/port/{smtpHostPort}/simple:
+    post:
+      tags:
+        - SwiftMail
+      operationId: send/swiftmail/simple
+      summary: Send a simple plaintext email
+      parameters:
+        - $ref: "#/components/parameters/SMTPHost"
+        - $ref: "#/components/parameters/SMTPHostPort"
+        - $ref: "#/components/parameters/Priority"
+      requestBody:
+        description: An email to send
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleSMTPEmail'
+      responses:
+        "200":
+          description: Successfully sent the email
+        "500":
+          description: An error occurred when sending the email
+  /send/sendgrid/apikey/{apiKey}/simple:
+    post:
+      tags:
+        - SendGridKit
+      operationId: send/sendgridkit/simple
+      summary: Send a simple plaintext email
+      parameters:
+        - $ref: "#/components/parameters/SendGridKitAPIKey"
+      requestBody:
+        description: An email to send
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimpleSendGridKitEmail"
+      responses:
+        "200":
+          description: Successfully sent the email
+        "500":
+          description: An error occurred when sending the email
+  /imap/swiftmail/host/{imapHost}/port/{imapHostPort}/mailboxes:
+    get:
+      tags:
+        - SwiftMail
+      operationId: imap/swiftmail/mailboxes
+      summary: Get a list of all mailboxes
+      parameters:
+        - $ref: "#/components/parameters/IMAPHost"
+        - $ref: "#/components/parameters/IMAPHostPort"
+      responses:
+        "200":
+          description: Successfully read the mailboxes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IMAPMailboxInfo"
+        "500":
+          description: An error occurred when reading the mailboxes
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  parameters:
+    Priority:
+      name: priority
+      in: query
+      description: The priority at which to send this email with
+      required: true
+      schema:
+        $ref: "#/components/schemas/EmailPriority"
+    SendGridKitAPIKey:
+      name: apiKey
+      in: path
+      description: The SendGridKit API key
+      required: true
+      schema:
+        type: string
+    SMTPHost:
+      name: smtpHost
+      in: path
+      description: The SMTP host www path. NEVER AN IP ADDRESS
+      example: website.com
+      required: true
+      schema:
+        type: string
+    SMTPHostPort:
+      name: smtpHostPort
+      in: path
+      description: The SMTP host provider port
+      required: true
+      schema:
+        type: integer
+    IMAPHost:
+      name: imapHost
+      in: path
+      description: The IMAP host www path. NEVER AN IP ADDRESS
+      example: website.com
+      required: true
+      schema:
+        type: string
+    IMAPHostPort:
+      name: imapHostPort
+      in: path
+      description: The IMAP host provider port
+      required: true
+      schema:
+        type: integer
+  schemas:
+    EmailPriority:
+      description: A priority level at which to send the email with
+      type: string
+      enum:
+        - immediately
+        - urgent
+        - high
+        - normal
+        - low
+    EmailProvider:
+      description: A provider to choose from that the EmailServer supports
+      type: string
+      enum:
+        - EmailServer
+        - AmazonSES
+        - SendGrid
+        - Google
+    EmailAddress:
+      description: An email address object
+      required:
+        - address
+      properties:
+        name:
+          description: The presentable email address name
+          type: string
+        address:
+          description: The email address itself
+          type: string
+          
+    SimpleSendGridKitEmailReplyToList:
+      description: An array of email addresses to send to
+      type: array
+      items:
+        $ref: "#/components/schemas/EmailAddress"
+    SimpleSendGridKitEmail:
+      description: A simple SMTP email sent through SwiftMail to an SMTP server
+      required:
+        - from
+        - reply_to
+        - subject
+        - text_body
+      properties:
+        from:
+          description: The sender of the email
+          $ref: "#/components/schemas/EmailAddress"
+        reply_to:
+          description: What kind of email to send
+          type: object
+          oneOf:
+            - $ref: "#/components/schemas/EmailAddress"
+            - $ref: "#/components/schemas/SimpleSendGridKitEmailReplyToList"
+        subject:
+          description: The subject of the email.
+          type: string
+        text_body:
+          description: The plain text body of the email
+          type: string
+          
+    SimpleSMTPEmail:
+      description: A simple SMTP email sent through SwiftMail to an SMTP server
+      required:
+        - sender
+        - recepients
+        - cc_recepients
+        - bcc_recepients
+        - subject
+        - text_body
+        - attachments
+      properties:
+        sender:
+          description: The sender of the email
+          $ref: "#/components/schemas/EmailAddress"
+        recepients:
+          description: The primary recepients of the email
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        cc_recepients:
+          description: The primary recepients of the email
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        bcc_recepients:
+          description: The primary recepients of the email
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        subject:
+          description: The subject of the email.
+          type: string
+        text_body:
+          description: The plain text body of the email
+          type: string
+        html_body:
+          description: The HTML body of the email (optional)
+          type: string
+        attachments:
+          description: An array of attachments to send
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+    Attachment:
+      description: An email Attachment
+      type: object
+      required:
+        - file_name
+        - mime_type
+        - data
+        - is_inline
+      properties:
+        file_name:
+          description: The filename of the attachment
+          type: string
+        mime_type:
+          description: The MIME type of the attachment
+          type: string
+        data:
+          description: The data of the attachment
+          type: string
+        content_id:
+          description: Optional content ID for inline attachments
+        is_inline:
+          description: Whether this attachment should be displayed inline
+          type: boolean
+    IMAPMailboxInfo:
+      description: Information about a mailbox from a LIST command
+      type: object
+      required:
+        - name
+        - attributes
+        - is_selectable
+        - has_children
+        - has_no_children
+        - is_marked
+        - is_unmarked
+      properties:
+        name:
+          description: The name of the mailbox
+          type: string
+        attributes:
+          description: The attributes of the mailbox
+          type: array
+          items:
+            $ref: "#/components/schemas/IMAPMailboxAttributes"
+        hierarchy_delimiter:
+          description: The hierarchy delimiter used by the server
+          type: string
+        is_selectable:
+          description: Whether the mailbox can be selected
+          type: boolean
+        has_children:
+          description: Whether the mailbox has child mailboxes
+          type: boolean
+        has_no_children:
+          description: Whether the mailbox has no child mailboxes
+          type: boolean
+        is_marked:
+          description: Whether the mailbox is marked
+          type: boolean
+        is_unmarked:
+          description: Whether the mailbox is umarked
+          type: boolean
+      
+    
+    IMAPMailboxAttributes:
+      description: Mailbox attributes that may be requested and returned as part of a *LIST* command.
+      type: string
+      enum:
+       - message_count
+       - recent_count
+       - uid_next
+       - uid_validity
+       - unseen_count
+       - size
+       - highest_modification_sequence
+       - append_limit
+       - mailbox_id
+       
+    IMAPMailboxStatus:
+      description: Set of information about the IMAP mailbox. None are guaranteed.
+      type: object
+      required:
+      properties:
+        message_count:
+          description: MESSAGES The number of messages in the mailbox.
+          type: integer
+        recent_count:
+          description: RECENT The number of messages with the \Recent flag set.
+          type: integer
+        next_uid:
+          description: UIDNEXT The next unique identifier value of the mailbox.
+          type: integer
+        uid_validity:
+          description: UIDVALIDITY The unique identifier validity value of the mailbox.
+          type: integer
+        unseen_count:
+          description: UNSEEN The number of messages which do not have the \Seen flag set.
+          type: integer
+        size:
+          description: SIZE RFC8438 The total size of the mailbox in octets.
+          type: integer
+        highest_modification_sequence:
+          description: HIGHESTMODSEQ RFC 7162 INT64 The highest mod-sequence value of all messages in the mailbox.
+          type: integer
+        append_limit:
+          description: APPENDLIMIT RFC 7889 per-mailbox APPENDLIMIT, i.e. maximum message upload size.
+          type: integer
+        mailbox_id:
+          description: MAILBOXID RFC 8474 object ID of the mailbox.
+          type: integer
