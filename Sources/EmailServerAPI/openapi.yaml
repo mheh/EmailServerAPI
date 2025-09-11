@@ -11,6 +11,29 @@ servers:
 security:
   - basicAuth: []
 paths:
+/new-session
+    post:
+      tags:
+        - Session Token
+      operationId: new_session
+      summary: Start a new session for the provided credentials
+      parameters:
+        - $ref: "#/components/parameters/SMTPHost"
+        - $ref: "#/components/parameters/SMTPHostPort"
+        - in:
+
+      requestBody:
+        description: An email to send
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleSMTPEmail'
+      responses:
+        "200":
+          description: Successfully sent the email
+        "500":
+          description: An error occurred when sending the email
   /send/swiftmail/host/{smtpHost}/port/{smtpHostPort}/simple:
     post:
       tags:
