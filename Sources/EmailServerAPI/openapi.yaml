@@ -16,7 +16,6 @@ paths:
       operationId: smtp_stream
       summary: Start a new SMTP session for the provided connection details
       parameters:
-        - $ref: "#/components/parameters/ConnectionKeepAlive"
         - $ref: "#/components/parameters/SMTPHost"
         - $ref: "#/components/parameters/SMTPHostPort"
       requestBody:
@@ -38,7 +37,6 @@ paths:
       operationId: imap_stream
       summary: Start a new IMAP session for the provided connection details
       parameters:
-        - $ref: "#/components/parameters/ConnectionKeepAlive"
         - $ref: "#/components/parameters/IMAPHost"
         - $ref: "#/components/parameters/IMAPHostPort"
       requestBody:
