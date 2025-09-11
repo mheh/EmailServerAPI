@@ -16,6 +16,7 @@ paths:
       operationId: smtp_stream
       summary: Start a new SMTP session for the provided connection details
       parameters:
+        - $ref: "#/components/parameters/StreamKeepAlive"
         - $ref: "#/components/parameters/SMTPHost"
         - $ref: "#/components/parameters/SMTPHostPort"
       requestBody:
@@ -53,6 +54,13 @@ paths:
           description: An error occurred when setting up the stream
 components:
   parameters:
+    StreamKeepAlive:
+      name: connection
+      in: header
+      description: Require http to communicate keep alive
+      required: true
+      schema:
+        type: string
     SMTPHost:
       name: smtpHost
       in: query

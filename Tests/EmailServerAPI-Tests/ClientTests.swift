@@ -25,6 +25,7 @@ struct ClientTests {
         
         let response = try await client.smtpStream(
             query: .init(smtpHost: "", smtpHostPort: 465),
+            headers: .init(connection: "keep-alive"),
             body: requestBody)
         let serverStream = try response.ok.body.applicationJsonl.asDecodedJSONLines(of: String.self)
         
