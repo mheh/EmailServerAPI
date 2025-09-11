@@ -12,20 +12,41 @@ paths:
   /smtp:
     post:
       tags:
-        - Session Token
-      operationId: smtpStream
-      summary: Start a new session for the provided credentials
+        - SMTP
+      operationId: smtp_stream
+      summary: Start a new SMTP session for the provided connection details
       parameters:
         - $ref: "#/components/parameters/SMTPHost"
         - $ref: "#/components/parameters/SMTPHostPort"
       requestBody:
-        description: An email to send
+        description: An SMTP stream message to send
         required: true
         content:
           application/jsonl: {}
       responses:
         "200":
-          description: Successfully sent the email
+          description: Performed stream operation successfully
+          content:
+            application/jsonl: {}
+        "500":
+          description: An error occurred when setting up the stream
+  /imap:
+    post:
+      tags:
+        - IMAP
+      operationId: imap_stream
+      summary: Start a new IMAP session for the provided connection details
+      parameters:
+        - $ref: "#/components/parameters/IMAPHost"
+        - $ref: "#/components/parameters/IMAPHostPort"
+      requestBody:
+        description: An IMAP stream message to send
+        required: true
+        content:
+          application/jsonl: {}
+      responses:
+        "200":
+          description: Performed stream operation successfully
           content:
             application/jsonl: {}
         "500":
