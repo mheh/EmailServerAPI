@@ -8,14 +8,12 @@ info:
 servers:
   - url: http://localhost:8080/
     description: local vapor server
-security:
-  - basicAuth: []
 paths:
-/new-session:
+  /smtp:
     post:
       tags:
         - Session Token
-      operationId: new_session
+      operationId: smtpStream
       summary: Start a new session for the provided credentials
       parameters:
         - $ref: "#/components/parameters/SMTPHost"
@@ -24,99 +22,19 @@ paths:
         description: An email to send
         required: true
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SimpleSMTPEmail'
+          application/jsonl: {}
       responses:
         "200":
           description: Successfully sent the email
-        "500":
-          description: An error occurred when sending the email
-  /send/swiftmail/host/{smtpHost}/port/{smtpHostPort}/simple:
-    post:
-      tags:
-        - SwiftMail
-      operationId: send/swiftmail/simple
-      summary: Send a simple plaintext email
-      parameters:
-        - $ref: "#/components/parameters/SMTPHost"
-        - $ref: "#/components/parameters/SMTPHostPort"
-        - $ref: "#/components/parameters/Priority"
-      requestBody:
-        description: An email to send
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SimpleSMTPEmail'
-      responses:
-        "200":
-          description: Successfully sent the email
-        "500":
-          description: An error occurred when sending the email
-  /send/sendgrid/apikey/{apiKey}/simple:
-    post:
-      tags:
-        - SendGridKit
-      operationId: send/sendgridkit/simple
-      summary: Send a simple plaintext email
-      parameters:
-        - $ref: "#/components/parameters/SendGridKitAPIKey"
-      requestBody:
-        description: An email to send
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SimpleSendGridKitEmail"
-      responses:
-        "200":
-          description: Successfully sent the email
-        "500":
-          description: An error occurred when sending the email
-  /imap/swiftmail/host/{imapHost}/port/{imapHostPort}/mailboxes:
-    get:
-      tags:
-        - SwiftMail
-      operationId: imap/swiftmail/mailboxes
-      summary: Get a list of all mailboxes
-      parameters:
-        - $ref: "#/components/parameters/IMAPHost"
-        - $ref: "#/components/parameters/IMAPHostPort"
-      responses:
-        "200":
-          description: Successfully read the mailboxes list
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/IMAPMailboxInfo"
+            application/jsonl: {}
         "500":
-          description: An error occurred when reading the mailboxes
+          description: An error occurred when setting up the stream
 components:
-  securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
   parameters:
-    Priority:
-      name: priority
-      in: query
-      description: The priority at which to send this email with
-      required: true
-      schema:
-        $ref: "#/components/schemas/EmailPriority"
-    SendGridKitAPIKey:
-      name: apiKey
-      in: path
-      description: The SendGridKit API key
-      required: true
-      schema:
-        type: string
     SMTPHost:
       name: smtpHost
-      in: path
+      in: query
       description: The SMTP host www path. NEVER AN IP ADDRESS
       example: website.com
       required: true
@@ -124,14 +42,14 @@ components:
         type: string
     SMTPHostPort:
       name: smtpHostPort
-      in: path
+      in: query
       description: The SMTP host provider port
       required: true
       schema:
         type: integer
     IMAPHost:
       name: imapHost
-      in: path
+      in: query
       description: The IMAP host www path. NEVER AN IP ADDRESS
       example: website.com
       required: true
@@ -139,70 +57,42 @@ components:
         type: string
     IMAPHostPort:
       name: imapHostPort
-      in: path
+      in: query
       description: The IMAP host provider port
       required: true
       schema:
         type: integer
   schemas:
-    EmailPriority:
-      description: A priority level at which to send the email with
-      type: string
-      enum:
-        - immediately
-        - urgent
-        - high
-        - normal
-        - low
-    EmailProvider:
-      description: A provider to choose from that the EmailServer supports
-      type: string
-      enum:
-        - EmailServer
-        - AmazonSES
-        - SendGrid
-        - Google
-    EmailAddress:
-      description: An email address object
+    SMTPServerStreamInput:
+      description: One of the inputs the server receives
+      type: object
       required:
-        - address
+        - input
       properties:
-        name:
-          description: The presentable email address name
-          type: string
-        address:
-          description: The email address itself
-          type: string
-          
-    SimpleSendGridKitEmailReplyToList:
-      description: An array of email addresses to send to
-      type: array
-      items:
-        $ref: "#/components/schemas/EmailAddress"
-    SimpleSendGridKitEmail:
-      description: A simple SMTP email sent through SwiftMail to an SMTP server
-      required:
-        - from
-        - reply_to
-        - subject
-        - text_body
-      properties:
-        from:
-          description: The sender of the email
-          $ref: "#/components/schemas/EmailAddress"
-        reply_to:
-          description: What kind of email to send
-          type: object
+        input:
           oneOf:
-            - $ref: "#/components/schemas/EmailAddress"
-            - $ref: "#/components/schemas/SimpleSendGridKitEmailReplyToList"
-        subject:
-          description: The subject of the email.
+            - $ref: "#/components/schemas/SMTPLogin"
+            - $ref: "#/components/schemas/SMTPLogout"
+            - $ref: "#/components/schemas/SimpleSMTPEmail"
+  
+    SMTPLogin:
+      description: Perform an SMTP login operation
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          description: The username to login with
           type: string
-        text_body:
-          description: The plain text body of the email
+        password:
+          description: The password to use to login with
           type: string
-          
+    SMTPLogout:
+      description: Log out of the SMTP operation
+      type: string
+      enum: [logout]
+        
     SimpleSMTPEmail:
       description: A simple SMTP email sent through SwiftMail to an SMTP server
       required:
@@ -269,6 +159,20 @@ components:
         is_inline:
           description: Whether this attachment should be displayed inline
           type: boolean
+                    
+    EmailAddress:
+      description: An email address object
+      type: object
+      required:
+        - address
+      properties:
+        name:
+          description: The presentable email address name
+          type: string
+        address:
+          description: The email address itself
+          type: string
+          
     IMAPMailboxInfo:
       description: Information about a mailbox from a LIST command
       type: object
