@@ -11,7 +11,7 @@ servers:
 security:
   - basicAuth: []
 paths:
-/new-session
+/new-session:
     post:
       tags:
         - Session Token
@@ -20,8 +20,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SMTPHost"
         - $ref: "#/components/parameters/SMTPHostPort"
-        - in:
-
       requestBody:
         description: An email to send
         required: true
