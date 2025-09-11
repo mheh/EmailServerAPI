@@ -16,7 +16,7 @@ paths:
       operationId: smtp_stream
       summary: Start a new SMTP session for the provided connection details
       parameters:
-        - $ref: "#/components/parameters/StreamKeepAlive"
+        - $ref: "#/components/parameters/ConnectionKeepAlive"
         - $ref: "#/components/parameters/SMTPHost"
         - $ref: "#/components/parameters/SMTPHostPort"
       requestBody:
@@ -38,6 +38,7 @@ paths:
       operationId: imap_stream
       summary: Start a new IMAP session for the provided connection details
       parameters:
+        - $ref: "#/components/parameters/ConnectionKeepAlive"
         - $ref: "#/components/parameters/IMAPHost"
         - $ref: "#/components/parameters/IMAPHostPort"
       requestBody:
@@ -54,7 +55,7 @@ paths:
           description: An error occurred when setting up the stream
 components:
   parameters:
-    StreamKeepAlive:
+    ConnectionKeepAlive:
       name: connection
       in: header
       description: Require http to communicate keep alive
@@ -103,7 +104,15 @@ components:
             - $ref: "#/components/schemas/SMTPLogin"
             - $ref: "#/components/schemas/SMTPLogout"
             - $ref: "#/components/schemas/SimpleSMTPEmail"
-  
+            - $ref: "#/components/schemas/StreamKeepAlive"
+    StreamKeepAlive:
+      description: Send a keep alive message to persist connection
+      type: object
+      required:
+        - keep_alive
+      properties:
+        keep_alive:
+          type: boolean
     SMTPLogin:
       description: Perform an SMTP login operation
       type: object
