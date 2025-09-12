@@ -23,25 +23,9 @@ struct ClientTests {
             middlewares: [LoggingMiddleware()]
         )
         
-        // form the client output stream
-        let (outStream, continuation) = AsyncStream<EmailServerAPI.Components.Schemas.SMTPServerStreamInput>.makeStream()
-        
-        let requestBody: Operations.SmtpStream.Input.Body = .applicationJsonl(
-            .init(outStream.asEncodedJSONLines(), length: .unknown, iterationBehavior: .single)
-        )
-        
-        do {
-            let req = try await client.smtpStream(
-                query: .init(smtpHost: "phoenix-repair-pos.com", smtpHostPort: 465),
-                body: requestBody)
-            
-            let response = try req.ok.body.applicationJsonl.asDecodedJSONLines(of: EmailServerAPI.Components.Schemas.SMTPServerStreamInput.self)
-            let streamer = try await ClientStream(output: outStream, continuation: continuation)
-            for try await message in response {
-                await streamer.handle(message)
-            }
-        } catch {
-            print(error)
+        let clientStream = try await SMTPClientStream(smtpHost: "phoenix-repair-pos.com", smtpHostPort: 465, using: client)
+        for try await message in await clientStream.inbound {
+            print(message.input)
         }
     }
 }

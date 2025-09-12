@@ -6,8 +6,56 @@
 //
 
 import Foundation
+import OpenAPIRuntime
 
 // MARK: Client Streaming
+public actor SMTPClientStream {
+    /// Stream response from server
+    public typealias Inbound = Components.Schemas.SMTPServerStreamInput
+    public typealias InboundStream = AsyncThrowingMapSequence<JSONLinesDeserializationSequence<HTTPBody>, Inbound>
+    
+    /// Stream request to server
+    public typealias Outbound  = Components.Schemas.SMTPServerStreamInput
+    public typealias OutboundStream = AsyncStream<Outbound>
+    
+    private let outbound: OutboundStream
+    private let continuation: OutboundStream.Continuation
+    
+    public let inbound: InboundStream
+    
+    public init(
+        smtpHost: String, smtpHostPort: Int, using client: Client
+    ) async throws {
+        // make outbound stream to server
+        let (outbound, continuation) = OutboundStream.makeStream()
+        let inbound = try await Self.make(smtpHost: smtpHost, smtpHostPort: smtpHostPort, outbound: outbound, client: client)
+        
+        self.outbound = outbound
+        self.continuation = continuation
+        
+        self.inbound = inbound
+    }
+    
+    static private func make(
+        smtpHost: String, smtpHostPort: Int,
+        outbound: OutboundStream,
+        client: Client
+    ) async throws -> InboundStream {
+        // fill out http req params and assign outbound stream
+        let request: Operations.SmtpStream.Input = .init(
+            query: .init(smtpHost: smtpHost, smtpHostPort: smtpHostPort),
+            body: .applicationJsonl(
+                .init(outbound.asEncodedJSONLines(), length: .unknown, iterationBehavior: .single)
+            ))
+        
+        // send request, return inbound stream
+        let res = try await client.smtpStream(request)
+        let inbound = try res.ok.body.applicationJsonl.asDecodedJSONLines(of: Inbound.self)
+        return inbound
+    }
+}
+
+
 public actor ClientStream {
     public typealias StreamOutput = AsyncStream<EmailServerAPI.Components.Schemas.SMTPServerStreamInput>
     
