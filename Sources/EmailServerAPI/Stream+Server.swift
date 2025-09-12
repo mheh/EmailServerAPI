@@ -12,7 +12,7 @@ import Logging
 /// Active streams connecting a client to an SMTP server
 public actor SMTPStreamStorage {
     /// Stream responses to the client
-    public typealias Outbound  = Components.Schemas.SMTPServerStream
+    public typealias Outbound = Components.Schemas.SMTPServerStream
     public typealias OutboundStream = AsyncStream<Outbound>
     
     private var streams: [UUID: ActiveStream]
@@ -25,50 +25,83 @@ public actor SMTPStreamStorage {
         self.streams = [:]
     }
     
-    @MainActor func send(id: UUID, email: Components.Schemas.SimpleSMTPEmail) async throws {
-        guard let found = await self.find(id: id) else { throw SMTPStreamError.notFound(id: id) }
+    func send(id: UUID, email: Components.Schemas.SimpleSMTPEmail) async throws {
+        guard let found = self.find(id: id) else { throw SMTPStreamError.notFound(id: id) }
         guard await found.isLoggedIn else { throw SMTPStreamError.isNotLoggedIn }
-        try await found.server.sendEmail(.init(
-            sender: .init(name: email.sender.name, address: email.sender.address),
-            recipients: email.recepients.map { .init(name: $0.name, address: $0.address)},
-            ccRecipients: email.ccRecepients.map { .init(name: $0.name, address: $0.address)},
-            bccRecipients: email.bccRecepients.map { .init(name: $0.name, address: $0.address)},
-            subject: email.subject,
-            textBody: email.textBody,
-            htmlBody: email.htmlBody,
-            attachments: nil))
+        do {
+            try await found.server.sendEmail(.init(
+                sender: .init(name: email.sender.name, address: email.sender.address),
+                recipients: email.recepients.map { .init(name: $0.name, address: $0.address)},
+                ccRecipients: email.ccRecepients.map { .init(name: $0.name, address: $0.address)},
+                bccRecipients: email.bccRecepients.map { .init(name: $0.name, address: $0.address)},
+                subject: email.subject,
+                textBody: email.textBody,
+                htmlBody: email.htmlBody,
+                attachments: nil))
+        } catch {
+            found.continuation.yield(.init(serverMessage: .SMTPServerStreamConnectionClose(true)))
+            throw SMTPStreamError.unexpected(error: error)
+        }
     }
     
-    @MainActor
-    public func login(id: UUID, username: String, password: String) async throws {
-        guard let found = await self.find(id: id) else { throw SMTPStreamError.notFound(id: id) }
+    
+    public func login(id: UUID, username: String, password: String) async throws -> Components.Schemas.SMTPServerStreamConnectionIDState {
+        guard let found = self.find(id: id) else { throw SMTPStreamError.notFound(id: id) }
         guard await !found.isLoggedIn else { throw SMTPStreamError.isLoggedIn }
+        
+        // try to login
         do {
             try await found.server.login(username: username, password: password)
             await found.isLoggedIn(true)
-            found.continuation.yield(.init(
-                serverMessage:
-                        .SMTPServerStreamConnectionIDState(.init(
-                            id: id.uuidString, _type: .inuse))))
         } catch {
-            found.continuation.yield(.init(serverMessage: .SMTPServerStreamConnectionClose(true)))
+            self.logger.error("Error during login \(error.localizedDescription)")
+            return .init(id: id.uuidString, _type: .open)
         }
+        
+        // remove from local state
+        let newId = UUID()
+        self.streams.removeValue(forKey: id)
+        self.streams[newId] = found
+        
+        // send an update over the stream
+        let streamState: Components.Schemas.SMTPServerStreamConnectionIDState = .init(id: newId.uuidString, _type: .inuse)
+        found.continuation.yield(.init(
+            serverMessage: .SMTPServerStreamConnectionIDState(
+                streamState)))
+        return streamState
     }
     
-    @MainActor
-    public func logout(id: UUID) async throws {
-        guard let found = await self.find(id: id) else { throw SMTPStreamError.notFound(id: id) }
+    
+    public func logout(id: UUID) async throws -> Components.Schemas.SMTPServerStreamConnectionIDState {
+        guard let found = self.find(id: id) else { throw SMTPStreamError.notFound(id: id) }
         guard await found.isLoggedIn else { throw SMTPStreamError.isNotLoggedIn }
-        try await found.server.disconnect()
-        await found.isLoggedIn(false)
+     
+        do {
+            try await found.server.disconnect()
+            await found.isLoggedIn(false)
+        } catch {
+            self.logger.error("Error during disconnect \(error)")
+            return .init(id: id.uuidString, _type: .inuse)
+        }
         do {
             try await found.server.connect()
-            found.continuation.yield(.init(
-                serverMessage: .SMTPServerStreamConnectionIDState(.init(
-                    id: id.uuidString, _type: .open))))
         } catch {
-            found.continuation.yield(.init(serverMessage: .SMTPServerStreamConnectionClose(true)))
+            self.logger.error("Error during reconnect \(error)")
+            return .init(id: id.uuidString, _type: .open)
         }
+        
+        // remove from state and reinsert at new id
+        let newId = UUID()
+        self.streams.removeValue(forKey: id)
+        self.streams[newId] = found
+        
+        let streamState: Components.Schemas.SMTPServerStreamConnectionIDState = .init(id: newId.uuidString, _type: .open)
+        
+        found.continuation.yield(.init(
+            serverMessage: .SMTPServerStreamConnectionIDState(
+                streamState)))
+        
+        return streamState
     }
     
     /// The stream `continuation` was `.finished`
@@ -160,5 +193,7 @@ public actor SMTPStreamStorage {
         case notFound(id: UUID)
         case isLoggedIn
         case isNotLoggedIn
+        case unexpected(error: any Error)
     }
 }
+

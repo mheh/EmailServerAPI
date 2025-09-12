@@ -30,8 +30,31 @@ public struct Handler: APIProtocol {
         }
     }
     
+    public func smtpLogin(_ input: Operations.SmtpLogin.Input) async throws -> Operations.SmtpLogin.Output {
+        guard let uuid = UUID.init(uuidString: input.path.smtpConnectionId) else {
+            throw BodyError.badPathId(id: input.path.smtpConnectionId)
+        }
+        guard case .json(let body) = input.body else { throw BodyError.cannotDecodeBody }
+        let streamState = try await self.storage.login(id: uuid, username: body.username, password: body.password)
+        return .ok(.init(body: .json(streamState)))
+    }
+    
+    public func smtpLogout(_ input: Operations.SmtpLogout.Input) async throws -> Operations.SmtpLogout.Output {
+        guard let uuid = UUID.init(uuidString: input.path.smtpConnectionId) else {
+            throw BodyError.badPathId(id: input.path.smtpConnectionId)
+        }
+        let streamState = try await self.storage.logout(id: uuid)
+        return .ok(.init(body: .json(streamState)))
+    }
+    
     public func imapStream(_ input: Operations.ImapStream.Input) async throws -> Operations.ImapStream.Output {
         return .internalServerError
     }
 }
 
+extension Handler {
+    enum BodyError: Error {
+        case badPathId(id: String)
+        case cannotDecodeBody
+    }
+}

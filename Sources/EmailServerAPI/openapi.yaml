@@ -9,7 +9,7 @@ servers:
   - url: http://localhost:8080/
     description: local vapor server
 paths:
-  /smtp:
+  /smtp/connection:
     post:
       tags:
         - SMTP
@@ -25,6 +25,43 @@ paths:
             application/jsonl: {}
         "500":
           description: An error occurred when setting up the stream
+  /smtp/id/{smtp_connection_id}/login:
+    post:
+      tags:
+        - SMTPHost
+      operationId: smtp_login
+      summary: Login to an existing SMTP connection
+      parameters:
+        - $ref: "#/components/parameters/SMTPConnectionId"
+      requestBody:
+        description: Send a login request to the connection ID
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SMTPLogin"
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SMTPServerStream_ConnectionIDState"
+  /smtp/id/{smtp_connection_id}/logout:
+    post:
+      tags:
+        - SMTPHost
+      operationId: smtp_logout
+      summary: Logout from an existing SMTP connection
+      parameters:
+        - $ref: "#/components/parameters/SMTPConnectionId"
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SMTPServerStream_ConnectionIDState"
   /imap:
     post:
       tags:
@@ -48,10 +85,10 @@ paths:
           description: An error occurred when setting up the stream
 components:
   parameters:
-    ConnectionKeepAlive:
-      name: connection
-      in: header
-      description: Require http to communicate keep alive
+    SMTPConnectionId:
+      name: smtp_connection_id
+      in: path
+      description: Require the connection ID string to be provided in path
       required: true
       schema:
         type: string
@@ -124,10 +161,6 @@ components:
         password:
           description: The password to use to login with
           type: string
-    SMTPLogout:
-      description: Log out of the SMTP operation
-      type: string
-      enum: [logout]
         
     SimpleSMTPEmail:
       description: A simple SMTP email sent through SwiftMail to an SMTP server
