@@ -32,7 +32,7 @@ struct ClientTests {
         
         do {
             let req = try await client.smtpStream(
-                query: .init(smtpHost: "asdf", smtpHostPort: 465),
+                query: .init(smtpHost: "phoenix-repair-pos.com", smtpHostPort: 465),
                 body: requestBody)
             
             let response = try req.ok.body.applicationJsonl.asDecodedJSONLines(of: EmailServerAPI.Components.Schemas.SMTPServerStreamInput.self)

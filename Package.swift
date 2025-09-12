@@ -16,6 +16,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(url: "https://github.com/Cocoanetics/SwiftMail", revision: "1a5f874"),
         .package(url: "https://github.com/apple/swift-openapi-generator.git", exact: "1.10.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime.git", exact: "1.8.2"),
         .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.0.0"),
@@ -23,7 +24,10 @@ let package = Package(
     targets: [
         .target(
             name: "EmailServerAPI",
-            dependencies: [ .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime") ],
+            dependencies: [
+                .product(name: "SwiftMail", package: "SwiftMail"),
+                .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime")
+            ],
             plugins: [ .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator") ]
         ),
         .testTarget(
