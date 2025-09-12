@@ -20,7 +20,7 @@ public struct Handler: APIProtocol {
             let eventStream = try await self.storage.make(input: input, id: UUID())
             
             let responseBody = Operations.SmtpStream.Output.Ok.Body.applicationJsonl(
-                .init(eventStream.asEncodedJSONLines(), length: .unknown, iterationBehavior: .single)
+                .init(eventStream.stream.asEncodedJSONLines(), length: .unknown, iterationBehavior: .single)
             )
             
             return .ok(.init(body: responseBody))

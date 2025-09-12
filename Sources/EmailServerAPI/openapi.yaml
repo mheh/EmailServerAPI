@@ -18,11 +18,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SMTPHost"
         - $ref: "#/components/parameters/SMTPHostPort"
-      requestBody:
-        description: An SMTP stream message to send
-        required: true
-        content:
-          application/jsonl: {}
       responses:
         "200":
           description: Performed stream operation successfully
@@ -91,26 +86,31 @@ components:
       schema:
         type: integer
   schemas:
-    SMTPServerStreamInput:
+    SMTPServerStream:
       description: One of the inputs the server receives
       type: object
       required:
-        - input
+        - server_message
       properties:
-        input:
+        server_message:
           oneOf:
-            - $ref: "#/components/schemas/SMTPLogin"
-            - $ref: "#/components/schemas/SMTPLogout"
-            - $ref: "#/components/schemas/SimpleSMTPEmail"
-            - $ref: "#/components/schemas/StreamKeepAlive"
-    StreamKeepAlive:
-      description: Send a keep alive message to persist connection
+            - $ref: "#/components/schemas/SMTPServerStream_ConnectionIDState"
+            - $ref: "#/components/schemas/SMTPServerStream_ConnectionClose"
+    SMTPServerStream_ConnectionClose:
+      description: Close the server connection
+      type: boolean
+    SMTPServerStream_ConnectionIDState:
+      description: Return the state of a connection
       type: object
       required:
-        - keep_alive
+        - id
+        - _type
       properties:
-        keep_alive:
-          type: boolean
+        id:
+          type: string
+        _type:
+          type: string
+          enum: [open, inuse]
     SMTPLogin:
       description: Perform an SMTP login operation
       type: object
