@@ -30,6 +30,10 @@ public struct Handler: APIProtocol {
         }
     }
     
+    public func smtpActiveConnections(_ input: Operations.SmtpActiveConnections.Input) async throws -> Operations.SmtpActiveConnections.Output {
+        return await .ok(.init(body: .json(self.storage.allConnections())))
+    }
+    
     public func smtpLogin(_ input: Operations.SmtpLogin.Input) async throws -> Operations.SmtpLogin.Output {
         guard let uuid = UUID.init(uuidString: input.path.smtpConnectionId) else {
             throw BodyError.badPathId(id: input.path.smtpConnectionId)

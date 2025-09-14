@@ -15,7 +15,7 @@ public actor SMTPStreamStorage {
     public typealias Outbound = Components.Schemas.SMTPServerStream
     public typealias OutboundStream = AsyncStream<Outbound>
     
-    private var streams: [UUID: ActiveStream]
+    var streams: [UUID: ActiveStream]
     
     var logger: Logger
     
@@ -23,6 +23,17 @@ public actor SMTPStreamStorage {
         self.logger = logger
         self.logger.logLevel = .trace
         self.streams = [:]
+    }
+    
+    func allConnections() async -> [Components.Schemas.SMTPServerStreamConnectionIDState] {
+        var all: [Components.Schemas.SMTPServerStreamConnectionIDState] = []
+        for (id, stream) in self.streams {
+            all.append(.init(
+                id: id.uuidString,
+                _type: await stream.getIsLoggedIn() ? .inuse : .open
+            ))
+        }
+        return all
     }
     
     func send(id: UUID, email: Components.Schemas.SimpleSMTPEmail) async throws {
@@ -176,6 +187,11 @@ public actor SMTPStreamStorage {
         public let server: SMTPServer
         let task: Task<Void, any Error>
         public var isLoggedIn: Bool = false
+        
+        @MainActor
+        public func getIsLoggedIn() async -> Bool {
+            return await self.isLoggedIn
+        }
         
         public func isLoggedIn(_ bool: Bool) {
             self.isLoggedIn = bool

@@ -40,18 +40,6 @@ public actor SMTPClientStream {
         let inbound = try res.ok.body.applicationJsonl.asDecodedJSONLines(of: Inbound.self)
         return inbound
     }
-    
-    static func taskGroup(inbound: InboundStream) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                for try await message in inbound {
-                    
-                }
-            }
-            
-            try await group.waitForAll()
-        }
-    }
 }
 
 
