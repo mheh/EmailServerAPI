@@ -6,13 +6,20 @@
 //
 import Foundation
 
-public enum WebsocketCommands: Codable {
+public enum WebsocketCommands: Codable, Sendable {
     case connectionState(ConnectionState)
     case connect(Connect)
     case connectNewHost(ConnectNewHost)
     case login(Login)
     case disconnect(Disconnect)
     case send(Send)
+    
+    public func encode() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        return data
+    }
     
     public static func decode(data: Data) throws -> Self {
         let decoder = JSONDecoder()
@@ -21,17 +28,17 @@ public enum WebsocketCommands: Codable {
         return decoded
     }
     
-    public struct ConnectionState: Codable {
+    public struct ConnectionState: Codable, Sendable {
         var command: String = "connection_state"
         public init() {}
     }
     
-    public struct Connect: Codable {
+    public struct Connect: Codable, Sendable {
         var command: String = "connect"
         public init() {}
     }
     
-    public struct ConnectNewHost: Codable {
+    public struct ConnectNewHost: Codable, Sendable {
         var command: String = "reconnect"
         public var host: String
         public var port: Int
@@ -41,7 +48,7 @@ public enum WebsocketCommands: Codable {
         }
     }
     
-    public struct Login: Codable {
+    public struct Login: Codable, Sendable {
         var command: String = "login"
         public var username: String
         public var password: String
@@ -51,12 +58,12 @@ public enum WebsocketCommands: Codable {
         }
     }
     
-    public struct Disconnect: Codable {
+    public struct Disconnect: Codable, Sendable {
         var command: String = "disconnect"
         public init() {}
     }
     
-    public struct Send: Codable {
+    public struct Send: Codable, Sendable {
         var command: String = "send"
         public var sender: EmailAddress
         public var recipients: [EmailAddress]
@@ -84,7 +91,7 @@ public enum WebsocketCommands: Codable {
             self.htmlBody = htmlBody
         }
         
-        public struct EmailAddress: Codable {
+        public struct EmailAddress: Codable, Sendable {
             public var name: String?
             public var address: String
             public init(name: String? = nil, address: String) {

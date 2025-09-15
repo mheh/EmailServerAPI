@@ -17,12 +17,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Cocoanetics/SwiftMail", revision: "1a5f874"),
+        .package(url: "https://github.com/swift-server/async-http-client", from: "1.9.0"),
     ],
     targets: [
         .target(
             name: "EmailServerAPI",
             dependencies: [
                 .product(name: "SwiftMail", package: "SwiftMail"),
+                .product(name: "AsyncHTTPClient", package: "async-htt-client"),
             ],
         ),
         .testTarget(

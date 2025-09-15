@@ -7,8 +7,15 @@
 
 import Foundation
 
-public enum WebsocketResponses: Codable {
+public enum WebsocketResponses: Codable, Sendable {
     case state(ConnectionState)
+    
+    public static func decode(data: Data) throws -> WebsocketResponses {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let response = try decoder.decode(WebsocketResponses.self, from: data)
+        return response
+    }
     
     public func encode() throws -> Data {
         let encoder = JSONEncoder()
