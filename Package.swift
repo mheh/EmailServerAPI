@@ -24,7 +24,7 @@ let package = Package(
             name: "EmailServerAPI",
             dependencies: [
                 .product(name: "SwiftMail", package: "SwiftMail"),
-                .product(name: "AsyncHTTPClient", package: "async-htt-client"),
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
             ],
         ),
         .testTarget(
