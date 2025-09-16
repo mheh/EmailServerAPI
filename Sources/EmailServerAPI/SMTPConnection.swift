@@ -77,30 +77,6 @@ public actor SMTPConnection {
         self.setIsConnected(true)
     }
     
-    /// Reconnect the SMTP server to a new host and port
-    public func reconnect(newHost: String, newPort: Int) async throws {
-        try hasState(isRunningCommand: false)
-        
-        try await whileRunningCommand {
-            if self.isConnected {
-                try await self.server.disconnect()
-            }
-        }
-        
-        self.setIsLoggedIn(false)
-        self.setIsConnected(false)
-        
-        self.host = newHost
-        self.port = newPort
-        self.server = SMTPServer(host: self.host, port: self.port)
-        
-        try await whileRunningCommand {
-            try await self.server.connect()
-        }
-        
-        self.setIsConnected(true)
-    }
-    
     /// Login the SMTP server to a user account
     public func login(username: String, password: String) async throws {
         try hasState(isRunningCommand: false, isConnected: true, isLoggedIn: false)

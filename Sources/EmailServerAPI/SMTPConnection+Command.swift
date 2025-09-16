@@ -8,10 +8,7 @@ import Foundation
 
 public enum WebsocketCommands: Codable, Sendable {
     case connectionState(ConnectionState)
-    case connect(Connect)
-    case connectNewHost(ConnectNewHost)
     case login(Login)
-    case disconnect(Disconnect)
     case send(Send)
     
     public func encode() throws -> Data {
@@ -32,22 +29,7 @@ public enum WebsocketCommands: Codable, Sendable {
         var command: String = "connection_state"
         public init() {}
     }
-    
-    public struct Connect: Codable, Sendable {
-        var command: String = "connect"
-        public init() {}
-    }
-    
-    public struct ConnectNewHost: Codable, Sendable {
-        var command: String = "reconnect"
-        public var host: String
-        public var port: Int
-        public init(host: String, port: Int) {
-            self.host = host
-            self.port = port
-        }
-    }
-    
+
     public struct Login: Codable, Sendable {
         var command: String = "login"
         public var username: String
@@ -56,11 +38,6 @@ public enum WebsocketCommands: Codable, Sendable {
             self.username = username
             self.password = password
         }
-    }
-    
-    public struct Disconnect: Codable, Sendable {
-        var command: String = "disconnect"
-        public init() {}
     }
     
     public struct Send: Codable, Sendable {
