@@ -4,9 +4,10 @@
 //
 //  Created by Milo Hehmsoth on 9/5/25.
 //
+
 import Foundation
 
-public enum WebsocketCommands: Codable, Sendable {
+public enum SMTPConnectionCommand: Codable, Sendable {
     case connectionState(ConnectionState)
     case login(Login)
     case send(Send)
@@ -21,7 +22,7 @@ public enum WebsocketCommands: Codable, Sendable {
     public static func decode(data: Data) throws -> Self {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode(WebsocketCommands.self, from: data)
+        let decoded = try decoder.decode(SMTPConnectionCommand.self, from: data)
         return decoded
     }
     

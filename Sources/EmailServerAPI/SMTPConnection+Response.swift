@@ -7,13 +7,13 @@
 
 import Foundation
 
-public enum WebsocketResponses: Codable, Sendable {
+public enum SMTPConnectionResponse: Codable, Sendable {
     case state(ConnectionState)
     
-    public static func decode(data: Data) throws -> WebsocketResponses {
+    public static func decode(data: Data) throws -> SMTPConnectionResponse {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let response = try decoder.decode(WebsocketResponses.self, from: data)
+        let response = try decoder.decode(SMTPConnectionResponse.self, from: data)
         return response
     }
     
