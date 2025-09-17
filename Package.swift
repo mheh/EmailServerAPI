@@ -12,14 +12,20 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "email-server-api",
-            targets: ["EmailServerAPI"]
+            targets: ["EmailServerAPI"],
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),
+        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.7.0"),
+    ],
     targets: [
         .target(
             name: "EmailServerAPI",
-            dependencies: [],
+            dependencies: [
+                .product(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
+                .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+            ],
         ),
         .testTarget(
             name: "EmailServerAPI-Tests",
