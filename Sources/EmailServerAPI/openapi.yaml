@@ -9,6 +9,13 @@ servers:
   - url: http://12.0.0.1:8081/
     description: local vapor server
 paths:
+  /ok:
+    get:
+      operationId: ok
+      summary: Perform a test connection check to validate the server exists
+      responses:
+        "200":
+          description: Successfully connected to server
   /smtp/queue:
     post:
       tags:
