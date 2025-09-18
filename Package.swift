@@ -26,6 +26,10 @@ let package = Package(
 //                .product(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],
+            resources: [
+                .process("openapi-generator-config.yaml"),
+                .process("openapi.yaml"),
+            ]
         ),
         .testTarget(
             name: "EmailServerAPI-Tests",
